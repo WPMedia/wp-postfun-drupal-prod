@@ -1,0 +1,13 @@
+; $Id: sites/all/modules/nodes/nodewords/nodewords.info 1.1 2010/10/13 11:53:04EDT Linda M. Williams (WILLIAMSLM) Production  $
+name = Nodewords
+description = Allows users to add meta tags, e.g. keywords or description. This module doesn't actually implement any meta tags, but requires other modules to implement them.
+package = Meta tags
+core = 6.x
+recommends[] = checkall
+recommends[] = vertical_tabs
+; Information added by drupal.org packaging script on 2009-12-31
+version = "6.x-1.11"
+core = "6.x"
+project = "nodewords"
+datestamp = "1262270443"
+

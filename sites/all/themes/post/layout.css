@@ -1,0 +1,890 @@
+/* $Id: sites/all/themes/post/layout.css 1.41 2010/10/13 10:47:32EDT Linda M. Williams (WILLIAMSLM) Production  $ */
+
+/*
+* LAYOUT STYLES
+*
+* Define CSS classes to create a table-free, 3-column, 2-column, or single
+* column layout depending on whether blocks are enabled in the left or right
+* columns.
+*
+* This layout is based on the Zen Columns layout method.
+*   http://drupal.org/node/201428
+*
+* Only CSS that affects the layout (positioning) of major elements should be
+* listed here.  Such as:
+*   display, position, float, clear, width, height, min-width, min-height
+*   margin, border, padding, overflow
+*/
+
+
+/** body **/
+body{
+
+}
+
+#page,
+#closure-blocks{
+/*
+ * If you want to make the page a fixed width and centered in the viewport,
+ * this is the standards-compliant way to do that. See also the ie.css file
+ * for the necessary IE5 hack to center a div.
+ */
+    margin-left: auto;
+    margin-right: auto;
+    width: 1000px;
+}
+
+#page-inner{
+
+}
+
+/*
+#navigation-top,
+#navigation{
+    position: absolute;  Take the named anchors out of the doc flow    
+    left: -10000px;      and prevent any anchor styles from appearing. 
+}
+*/
+
+#skip-to-nav{
+    float: right;
+    margin: 0 !important;
+    font-size: 0.8em;
+}
+
+#skip-to-nav a:link, #skip-to-nav a:visited{
+    color: #fff; /* Same as background color of page */
+}
+
+#skip-to-nav a:hover{
+    color: #000;
+    text-decoration: none;
+}
+
+/* Alternatively, the skip-to-nav link can be completely hidden until a user tabs
+ to the link. Un-comment the following CSS to use this technique. */
+/*
+#skip-to-nav a, #skip-to-nav a:hover, #skip-to-nav a:visited
+{
+position: absolute;
+left: 0;
+top: -500px;
+width: 1px;
+height: 1px;
+overflow: hidden;
+}
+
+#skip-to-nav a:active, #skip-to-nav a:focus
+{
+position: static;
+width: auto;
+height: auto;
+}
+*/
+
+/** header **/
+#header{
+
+}
+
+#header-inner{
+
+}
+
+#logo-title{
+
+}
+
+#logo{
+    float: left;
+}
+
+#site-name{
+
+}
+
+#site-slogan{
+
+}
+
+#header-blocks{
+    clear: both; /* Clear the logo */
+}
+
+/** main (container for everything else) **/
+#main{
+    position: relative;
+}
+
+#main-inner{
+
+}
+
+/** content **/
+#content {
+    width:960px;
+}
+
+
+/*#content,
+.no-sidebars #content{
+    float: left;
+    width: 960px;
+    margin-left: 0;
+    margin-right: -960px; /* Negative value of #content's width + left margin.
+    padding: 0; /* DO NOT CHANGE. Add padding or margin to #content-inner.
+}
+
+.sidebar-left #content{
+    width: 760px;
+    margin-left: 200px; /* The width of #sidebar-left.
+    margin-right: -960px; /* Negative value of #content's width + left margin.
+}
+
+.sidebar-right #content{
+    width: 760px;
+    margin-left: 0;
+    margin-right: -760px; /* Negative value of #content's width + left margin.
+}
+
+.two-sidebars #content{
+    width: 560px;
+    margin-left: 200px; /* The width of #sidebar-left
+    margin-right: -760px; /* Negative value of #content's width + left margin.
+}
+
+#content-inner{
+    margin: 0;
+    padding: 0;
+}*/
+
+/** navbar **/
+#navbar{
+    float: left;
+    width: 100%;
+    margin-left: 0;
+    margin-right: -100%; /* Negative value of #navbar's width + left margin. */
+    padding: 0; /* DO NOT CHANGE. Add padding or margin to #navbar-inner. */
+    height: 3.6em; /* The navbar can have any arbritrary height. We picked one
+                      that is twice the line-height pluse 1em: 2 x 1.3 + 1 = 3.6
+                      Set this to the same value as the margin-top below. */
+}
+
+.with-navbar #content,
+.with-navbar #sidebar-left,
+.with-navbar #sidebar-right{
+    margin-top: 3.6em; /* Set this to the same value as the navbar height above. */
+}
+
+#navbar-inner{
+
+}
+
+#search-box{
+    width: 200px;
+    margin-right: -200px; /* Negative value of #search-box's width. */
+    float: left;
+}
+
+#primary{
+    margin-left: 200px; /* Width of search-box */
+}
+
+#secondary{
+    margin-left: 200px; /* Width of search-box */
+}
+
+/* Primary and secondary links */
+#navbar ul{
+    margin: 0;
+    padding: 0;
+    text-align: left;
+}
+
+/* A simple method to get navbar links to appear in one line. */
+#navbar li{
+    float: left;
+    padding: 0 10px 0 0;
+}
+
+/* There are many methods to get navbar links to appear in one line.
+* Here's an alternate method: */
+/*
+#navbar li
+{
+display: inline;
+padding: 0 10px 0 0;
+}
+*/
+
+/** sidebar-left **/
+#sidebar-left{
+    float: left;
+    width: 200px;
+    margin-left: 0;
+    margin-right: -200px; /* Negative value of #sidebar-left's width + left margin. */
+    padding: 0; /* DO NOT CHANGE. Add padding or margin to #sidebar-left-inner. */
+}
+
+#sidebar-left-inner{
+    margin: 0 20px 0 0;
+    padding: 0;
+}
+
+/** sidebar-right **/
+#sidebar-right{
+    float: left;
+    width: 200px;
+    margin-left: 760px; /* Width of content + sidebar-left. */
+    margin-right: -960px; /* Negative value of #sidebar-right's width + left margin. */
+    padding: 0; /* DO NOT CHANGE. Add padding or margin to #sidebar-right-inner. */
+}
+
+#sidebar-right-inner{
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+/** footer **/
+#footer{
+
+}
+
+#footer-inner{
+
+}
+
+/** closure **/
+/* See also the #page declaration above that this div shares. */
+#closure-blocks{
+
+}
+
+/** Prevent overflowing content **/
+#header,
+#content,
+#navbar,
+#sidebar-left,
+#sidebar-right,
+#footer,
+#closure-blocks{
+    overflow: visible;
+    word-wrap: break-word; /* A very nice CSS3 property */
+}
+
+#navbar{
+    overflow: hidden; /* May need to be removed if using a dynamic drop-down menu */
+}
+
+/* If a div.clear-block doesn't have any content after it and its bottom edge
+ touches the bottom of the viewport, Firefox and Safari will mistakenly
+ place several pixels worth of space between the bottom of the div and the
+ bottom of the viewport. Uncomment this CSS property to fix this.
+ Note: with some over-large content, this property might cause scrollbars
+ to appear on the #page div.
+*/
+/*
+#page
+{
+overflow-y: hidden;
+}
+*/
+
+
+/* ALL ADDED STYLES */
+.floatClear { clear:both;height:1px; }
+.right      { float:right; }
+.left       { float:left; }
+.bold       { font-weight:bold; }
+.show		{ display:block; }
+.hide		{ display:none; }
+.errorCode  { color:#999999; font-size:1.0em; }
+
+.postfun-login li {
+    background-image:none;
+}
+
+.ie.ie7 li.relLi,
+.ie.ie7 li.hpLi {
+    margin-left:-15px;
+    background:transparent url(http://media3.washingtonpost.com/wp-srv/global/images/bullet-point/bullet-point.png) no-repeat scroll 15px .6em;
+}
+
+.ie.ie6 li.relLi,
+.ie.ie6 li.hpLi {
+    margin-left:-15px;
+    background:transparent url(http://media3.washingtonpost.com/wp-srv/global/images/bullet-point/bullet-point.png) no-repeat scroll 0px .6em;
+}
+
+.ie #popup-wrapper {
+	text-align: left;
+}
+
+/* HEADER */
+.breadcrumb-link {
+    float:right;
+    font-size:1.2em;
+    margin:10px 10px 0px 0px;
+}
+.feedback {
+    background:transparent url(http://media3.washingtonpost.com/wp-adv/style/icons/icon_feedback.gif) no-repeat scroll 2px 2px;
+    padding-left:15px;
+}
+
+/* LEFT COLUMN */
+#left {
+    width:400px;
+    background-color:white;
+    float:left;
+}
+.listItem {
+    width:400px;
+    margin-bottom:15px;
+}
+.listItemDivide {
+    margin:15px;
+    height:1px;
+    background-color:#DDD;
+    clear:both;
+}
+.listThumbImg {
+    float:left;
+    margin:0px 15px 5px 0px;
+}
+.listThumbImg img {
+    background-color:white;
+    border:2px solid #E1E1E1;
+    padding:1px;
+}
+.listExcerpt {
+    float:left;
+    width:300px;
+}
+.listExcerpt p {
+    margin-top:0px !important;
+}
+.listEntryLink,
+.listRulesLink {
+    width:450px;
+    margin-left:15px;
+}
+
+h2.postListTitle { /* define style for List View title */
+
+}
+/* CENTER COLUMN */
+#center {
+    width:200px;
+    background-color:#EEE;
+    float:left;
+}
+#twitter_update_list,
+#twitter_update_list li {
+    background:none;
+    padding:0px;
+    margin-bottom:10px;
+}
+
+/* RIGHT COLUMN */
+#right {
+    width:400px;
+    background-color:white;
+    float:left;
+    position:relative;
+}
+#pageImage {
+    width:400px;
+    height:300px;
+}
+.vrule.doublegrey.seven-three-six {
+	background: url('images/rules/vertical-double-rule-3col-736-grey.png') repeat-y 427px 50%;
+}
+
+.hrule {
+    margin:10px 0px 0px;
+    background-repeat:repeat-x;
+    width:100%;
+    /*background-image needs to be included for each type- .hrule doesn't have a default BG image*/
+}
+.ie.ie6 .hrule {
+    margin-bottom: 10px;
+}
+.hrule.grey-dots {
+    background-image:url('images/rules/horizontal-single-rule-dotted-grey.gif');
+    background-position:0px 0px;
+}
+
+fieldset {
+	border-top:1px solid #E1E1E1;
+}
+legend {
+	margin-left:5px;
+    font-size:1.4em;
+    font-weight:bold;
+    padding: 0px 5px;
+}
+
+.logo_link {
+
+}
+/* - - - */
+.relatedLink {
+    margin-bottom:10px;
+}
+.relatedLink {
+    text-align:right;
+    width:400px;
+}
+.relatedLink.express {
+    height:25px;
+    background:url('images/partner_logos.gif') 0 0 no-repeat;
+}
+.relatedLink.tastepost {
+    height:50px;
+    background:url('images/partner_logos.gif') 0px -50px no-repeat;
+}
+.relatedLink.capitoldish {
+    height:50px;
+    background:url('images/partner_logos.gif') 0px -50px no-repeat;
+}
+.twitterBottom {
+	background: url('images/backgrounds/twitter_bottom.gif') 0px 0px no-repeat;
+    height:85px;
+}
+
+.slideshow_bg {
+	background: url('images/backgrounds/homepage_topRow.gif') 0px 0px no-repeat;
+    height:360px;
+}
+.slideshow {
+    padding:20px 30px 0px 20px;
+    overflow:hidden;
+}
+
+.slideshow_title{
+    height:30px;
+}
+.welcome img{
+    float:right;
+}
+p.dateline {
+    margin:-8px 0 5px;
+    /*margin:0px;*/
+}
+.module.listBlock {
+	background-image: url('images/backgrounds/homepage_topRow.gif');
+    background-repeat:no-repeat;
+    height:332px;
+    padding:20px;
+}
+.ie .module.listBlock {
+    height:372px;
+}
+.module.listBlock.hpContestList {
+    background-position:-442px 0px;
+}
+.module.listBlock.hpEventList {
+    background-position:-721px 0px;
+}
+.votePic { /* div containing image and description for picture voting */
+    float:left;
+    width:225px;
+    margin:0px 20px 10px 0px;
+}
+.logoImage {
+    float:left;
+    width:100px;
+    height:100px;
+    margin:10px 15px 0px 0px;
+}
+.terms-use {
+    margin:10px 0px;
+    font-style:italic;
+}
+.sponsorBlock,
+.contactBlock {
+    margin-top:20px;
+}
+.contactInfo{
+    border-top:1px solid #E1E1E1;
+    margin-top:5px;
+}
+.contactBlock .contactInfo{
+    border-top:none;
+    margin-top:0px;
+}
+.sponsorLogos {
+    width:470px;
+}
+.form-text {
+    width:300px;
+}
+ul.primary li {
+    background-image:none;
+}
+.hpLi {
+    font-size:1.5em;
+    line-height:1.3em;
+    margin-bottom:10px;
+    margin-top:5px;
+}
+.postfun-help {
+    display:none;
+}
+
+/* to fix bad width */
+.wp-column.nine {
+	width: 548px;
+}
+.wp-column.half-of-nine {
+        /* 548 [nine column width] - 10px [half of the padding] = 269px */
+    width:269px;
+}
+.slideshow-right {
+    margin-right:10px;
+}
+.ie .slideshow-right { /* padding on the right of the slideshot to fix IEs problems */
+    margin-right:9px;
+}
+
+.wp-column.we-three {
+	width: 176px;
+    overflow:hidden;
+}
+.ie .first {
+    white-space: nowrap;
+}
+
+/* ------------------*/
+.ctl.lightblue,
+.ctr.lightblue,
+.cbr.lightblue,
+.cbl.lightblue {
+	background-image: url('images/backgrounds/lightblue-4-corners.gif');
+	background-repeat: no-repeat;
+	background-color: transparent;
+	background-attachment: scroll;
+}
+.ctl.twitterblue,
+.ctr.twitterblue,
+.cbr.twitterblue,
+.cbl.twitterblue {
+	background-image: url('images/backgrounds/twitterblue-4-corners.gif');
+	background-repeat: no-repeat;
+	background-color: transparent;
+	background-attachment: scroll;
+}
+.ctl.grey,
+.ctr.grey,
+.cbr.grey,
+.cbl.grey {
+	background-image: url('images/backgrounds/grey-4-corners.gif');
+	background-repeat: no-repeat;
+	background-color: transparent;
+	background-attachment: scroll;
+}
+.ctl.yellowOnGreen,
+.ctr.yellowOnGreen,
+.cbr.yellowOnGreen,
+.cbl.yellowOnGreen {
+	background-image: url('images/backgrounds/yellowOnGreen-4-corners.gif');
+	background-repeat: no-repeat;
+	background-color: transparent;
+	background-attachment: scroll;
+}
+.ctl.green,
+.ctr.green,
+.cbr.green,
+.cbl.green {
+	background-image: url('images/backgrounds/green-4-corners.gif');
+	background-repeat: no-repeat;
+	background-color: transparent;
+	background-attachment: scroll;
+}
+
+/** Added Shade Color **/
+.shade.lightblue_bg {
+	background-color: #ecf5f6;
+}
+.shade.grey_bg {
+	background-color: #eee;
+}
+.shade.twitterblue_bg {
+	background-color: #d2f5ff;
+}
+
+/* CALENDAR STYLES */
+#calendar_ajax {
+	line-height:100%;
+	width:176px;
+}
+#calendar {
+    margin-top:10px;
+}
+#calendar a {
+    text-decoration:underline;
+}
+#nav {
+	text-align:center;
+}
+.ie #nav {
+	margin-bottom:5px;
+}
+
+#nav div {
+	float:left;
+}
+
+#calendar_prev, #calendar_next {
+  width:20px;
+  height:15px;
+  cursor:pointer;
+  background-repeat:no-repeat;
+  margin-bottom:4px;
+  background-image:url('http://media3.washingtonpost.com/wp-adv/style/browse-by-nav-arrows.png');
+}
+.ie #calendar_prev, .ie #calendar_next {
+    height:17px;
+}
+.ie.ie6 #calendar_prev, .ie #calendar_next {
+    height:15px;
+}
+#calendar_prev span, #calendar_next span{
+    display:none;
+}
+#calendar_prev  {
+    background-position:0px -20px;
+}
+#calendar_next {
+    background-position:0px -57px;
+}
+#calendar_month {
+  width:125px;
+	margin-top:4px;
+    text-transform:uppercase;
+    font-weight:bold;
+}
+
+.hok {
+  padding:0px;
+	width:25px;
+	height:18px;
+	float:left;
+	text-align:center;
+	font-weight:bold;
+  position:relative;
+}
+
+.hok span {
+  display:block;
+}
+
+.hok.first, .hok.last {
+	width:24px;
+}
+.hok.top {
+	font-size:9px;
+	height:12px;
+	line-height:100%;
+	padding:0px;
+    text-transform:uppercase;
+}
+
+.hok.disabled span {
+  -moz-opacity:.50;
+  filter:alpha(opacity=50);
+  opacity:.50;
+}
+
+#calendar_row0 .hok span {
+  margin-top:0px;
+}
+
+#calendar_row6 .hok {
+  height:17px;
+}
+
+#calendar_row0 {
+  height:37px;
+    background-image:none;
+}
+
+#calendar_row1 .hok {
+    background-image:none;
+}
+
+#calendar_row2 .hok {
+    background-image:none;
+}
+
+#calendar_row3 .hok {
+    background-image:none;
+}
+
+#calendar_row4 .hok {
+    background-image:none;
+}
+
+#calendar_row5 .hok {
+    background-image:none;
+}
+
+#calendar_row6 .hok {
+    background-image:none;
+}
+
+/*#calendar_row1 .hok.disabled {
+  background-image:url('images/cell_first_row_disabled.png');
+}
+
+#calendar_row5 .hok.disabled, #calendar_row6 .hok.disabled {
+  background-image:url('images/cell_last_row_disabled.png');
+}*/
+#calendar_row1 .hok.disabled {
+  background-color:#F0FAFB;
+}
+
+#calendar_row5 .hok.disabled, #calendar_row6 .hok.disabled {
+  background-color:#F0FAFB;
+}
+
+#calendar_row1 .hok.today,
+#calendar_row2 .hok.today,
+#calendar_row3 .hok.today,
+#calendar_row4 .hok.today,
+#calendar_row5 .hok.today,
+#calendar_row6 .hok.today {
+    background-color:#A6C4CF;
+    background-image:none;
+}
+
+.hok .border_right, .hok .border_bottom {
+  position:absolute;
+  background-color:none;
+  right:0px;
+  -moz-opacity:.10;
+  filter:alpha(opacity=10);
+  opacity:.10;
+}
+
+.hok .border_right {
+  width:1px;
+  height:100%;
+  top:0px;
+}
+
+.hok .border_bottom {
+  bottom:0px;
+  width:100%;
+  height:1px;
+  overflow:hidden;
+}
+
+.calendar-link:visited {
+	text-decoration:underline;
+}
+
+.week .clear-block {
+  height:0px;
+  clear:both;
+  overflow:hidden;
+}
+
+#color_textfields_wrapper {
+  float:left;
+}
+
+#color_textfields_wrapper .form-submit {
+  float:left;
+  margin:30px 10px 0px 0px;
+}
+
+/* OVERLAY GLOBAL STYLES */
+.obox p {
+    font-family:Arial,sans-serif;
+    font-size:1.2em;
+    line-height:normal;
+    margin-bottom:10px;
+    margin-top:0;
+}
+.obox .rss-list ul li p {
+    padding:5px 10px;
+}
+.obox .rss-list ul li {
+    margin:10px 0px;
+    font-size:inherit;
+    padding-left:0px;
+    background-image:none;
+}
+
+/****** Show Tools Overlay Forms *******/
+
+.obox-data {
+    display: none;
+}
+
+.obox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    text-align: left;
+}
+
+.obox .popup {
+    position: absolute;
+    background-color: #000000;
+    padding: 10px;
+    width: auto;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    opacity:.35;
+    -moz-opacity:.35;
+    filter:alpha(opacity=35);
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+}
+
+.obox .container {
+    position: relative;
+    z-index: 2;
+    background-color: #ffffff;
+    padding: 10px;
+    top: 10px;
+    left: 10px;
+}
+
+.ie .obox .container {
+    width: 390px;
+}
+
+.obox .titleBar {
+    padding: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #E1E1E1;
+}
+
+.obox .titleBar span {
+    font-weight: bold;
+    color: #464646;
+    font-size: 1.8em;
+}
+
+.obox .container .loading {
+    padding: 10px;
+    text-align: center;
+}
+
+.obox div.titleBar div.window-actions div {
+    float: right;
+    margin-left: 5px;
+}
+/* OBox Specific to Homepage */
+.obox .titleBar span {
+    color: #E11A1F;
+    font-size: 1.2em;
+    text-transform: uppercase;
+}

@@ -1,0 +1,62 @@
+<?php
+// $Id: sites/all/modules/custom/events/events.install 1.6 2010/02/18 14:51:59EST Linda M. Williams (WILLIAMSLM) Production  $
+
+/**
+ * Implementation of hook_install().
+ */
+function events_install(){
+   //Use schema API to create database table.
+   drupal_install_schema('events');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function events_uninstall(){
+    //Use schema API to delete database table.
+    //drupal_uninstall_schema('events');
+}
+
+
+function events_schema(){
+    $schema['events_payment_confirmation'] = array(
+        'description' => t('Stores paid events payment confirmations.'),
+        'fields' => array(
+            'nid' => array(
+                'type'=>'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => t('The {node}.nid of the event.'),
+            ),
+            'sid' => array(
+                'type'=>'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => t('The unique submission id (sid) of the user entry.'),
+            ),
+            'created' => array(
+                'type'=>'int',
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => t('A Unix timestamp indicating when the confirmation was inserted into the table.'),
+            ),
+            'confirmation' => array(
+                'type'=>'varchar',
+                'not null' => TRUE,
+                'length' => 100,
+                'description' => t('Confirmation number from Payment Tech.'),
+            ),
+            'ordernum' => array(
+                'type'=>'varchar',
+                'not null' => TRUE,
+                'length' => 30,
+                'description' => t('Order number from Payment Tech.'),
+            ),
+        ),
+        'primary key' => array(
+            'nid','sid'
+        ),
+    );
+
+    return $schema;
+}

@@ -1,0 +1,12 @@
+; $Id: sites/all/modules/nodes/nodewords/nodewords_extra/nodewords_extra.info 1.1 2010/10/13 11:53:18EDT Linda M. Williams (WILLIAMSLM) Production  $
+name = Nodewords - extra meta tags
+description = Allows users to add extra meta tags to Drupal pages.
+dependencies[] = nodewords
+package = Meta tags
+core = 6.x
+; Information added by drupal.org packaging script on 2009-12-31
+version = "6.x-1.11"
+core = "6.x"
+project = "nodewords"
+datestamp = "1262270443"
+

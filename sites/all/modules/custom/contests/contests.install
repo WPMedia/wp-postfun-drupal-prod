@@ -1,0 +1,84 @@
+<?php
+// $Id: sites/all/modules/custom/contests/contests.install 1.7 2009/10/22 12:01:58EDT Linda M. Williams (WILLIAMSLM) Exp  $
+
+/**
+ * Implementation of hook_install().
+ */
+function contests_install(){
+   //Use schema API to create database table.
+   drupal_install_schema('contests');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function contests_uninstall(){
+    //Use schema API to delete database table.
+    //drupal_uninstall_schema('contests');
+    //Delete our module's variable fromthe variables table.
+    //variable_del('contests_email_form_text');
+}
+
+
+function contests_schema(){
+    $schema['contests_winners'] = array(
+        'description' => t('Stores selected contests winners.'),
+        'fields' => array(
+            'nid' => array(
+                'type'=>'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => t('The {node}.nid of the contests.'),
+            ),
+            'uid' => array(
+                'type'=>'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => t('The unique id (uid) of the user who selected the winners.'),
+            ),
+            'sid' => array(
+                'type'=>'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+                'description' => t('The unique id (sid) of the user entry.'),
+            ),
+            'created' => array(
+                'type'=>'int',
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => t('A Unix timestamp indicating when the winner was selected.'),
+            ),
+            'alternate' => array(
+                'type'=>'char',
+                'not null' => TRUE,
+                'length' => 1,
+                'default' => 'N',
+                'description' => t('Indicates whether or not this winner is an alternate.'),
+            ),
+        ),
+        'primary key' => array(
+            'nid','sid'
+        ),
+    );
+
+    $schema['contests_mailing_list'] = array(
+        'description' => t('Stores email from mailing list form.'),
+        'fields' => array(
+            'email' => array(
+                'type'=>'varchar',
+                'length' => 255,
+                'not null' => TRUE,
+                'description' => t('The email address.'),
+            ),
+            'created' => array(
+                'type'=>'int',
+                'not null' => TRUE,
+                'unsigned' => TRUE,
+                'default' => 0,
+                'description' => t('A Unix timestamp indicating when the email was inserted into the db.'),
+            ),
+        ),
+    );
+
+    return $schema;
+}

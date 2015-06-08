@@ -1,0 +1,37 @@
+<?php
+// $Id: sites/all/modules/nodes/nodewords/nodewords_basic/nodewords_basic.install 1.1 2010/10/13 11:53:15EDT Linda M. Williams (WILLIAMSLM) Production  $
+
+/**
+ * @file
+ * Installation file for Nodewords - basic meta tags.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function nodewords_basic_install() {
+  db_query("UPDATE {system} SET weight = 12 WHERE name = 'nodewords_basic' AND type = 'module'");
+}
+
+/**
+ * Next update ID: 6105.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function nodewords_basic_uninstall() {
+  if (db_table_exists('nodewords')) {
+    $metatags = array(
+      'abstract',
+      'canonical',
+      'copyright',
+      'description',
+      'keywords',
+      'revisit-after',
+      'robots'
+    );
+
+    db_query("DELETE FROM {nodewords} WHERE name IN (" . db_placeholders($metatags, 'varchar') . ")", $metatags);
+  }
+}

@@ -1,0 +1,461 @@
+<?php
+// $Id: sites/all/modules/custom/events/events.module 1.11 2010/02/18 14:51:59EST Linda M. Williams (WILLIAMSLM) Production  $
+
+/**
+ * Implementation of hook_menu()
+ */
+function events_menu() {
+    $items['events'] = array(
+      'title' => 'Events Admin',
+      'description' => 'Events administration.',
+      'position' => 'right',
+      'weight' => -5,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer events'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    );
+
+    $items['events/display'] = array(
+      'title' => 'Events Display',
+      'description' => 'Select an event to display.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('events_display'),
+      'access arguments' => array('administer events'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+    $items['events/detail'] = array(
+        'title' => t('Event Detail'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('events_detail'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer events'),
+    );
+
+    $items['events/download'] = array(
+        'title' => t('Download Event Submissions'),
+        'page callback' => 'events_download',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer events'),
+    );
+
+    $items['events/email'] = array(
+      'title' => 'Emails',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('events_email'),
+      'access arguments' => array('administer events'),
+      'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+function events_perm(){
+    return array('administer events', 'administer events');
+}
+/**
+* @file
+* Implementation of hook_calendar_block().
+*/
+function events_calendar_block(&$calendar,&$date, $op) {
+
+  switch ($op) {
+
+    case 'alter':
+        //$url = url($path, array('query' => $query, 'fragment' => $fragment, 'absolute' => TRUE));
+       // $path = isset($_GET['q']) ? $_GET['q'] : '<front>';
+//$link = url($path, array('absolute' => TRUE));
+
+
+
+        $sql = "SELECT count(n.nid) FROM {content_type_events} cte, {node} n
+                where cte.nid=n.nid and n.status = 1
+                and Date_format(cte.field_event_date_value , '%%c') = %d
+                and Date_format(cte.field_event_date_value , '%%e') = %d
+                and Date_format(cte.field_event_date_value , '%%Y') = %d";
+
+        $num_rows = db_result(db_query($sql,$date->month,$date->day,$date->year));
+
+        if ($date->month < 10):
+            $mo = "0" . $date->month;
+        else:
+            $mo = $date->month;
+        endif;
+
+        if ($date->day < 10):
+            $dy = "0" . $date->day;
+        else:
+            $dy = $date->day;
+        endif;
+
+        $evtDt = strtotime($date->year . $mo . $dy);
+        $now = strtotime("yesterday");
+
+        if (!empty($num_rows)){
+            if ($now < $evtDt){
+                $date->content='<a href = "post/posteventslist?dt=' . $date->year . $mo . $dy . '">' . $date->day . '</a>';
+            }
+        } else {
+            $date_in_secs = mktime(0, 0, 0,$date->month ,$date->day,$date->year );
+            
+            $sql = "SELECT count(n.nid) FROM {content_type_events} cte, {node} n 
+                    where cte.nid=n.nid and n.status = 1
+                    and cte.field_event_date_value is not null 
+                    and cte.field_event_date_value2 is not null
+                    and cte.field_evergreen_value = 'false'
+                    and unix_timestamp(cte.field_event_date_value)  <= %d
+                    and unix_timestamp(cte.field_event_date_value2) >= %d";
+                
+            $num_rows = db_result(db_query($sql,$date_in_secs,$date_in_secs));
+            
+            if(!empty($num_rows)){
+                if ($now < $evtDt){
+                    $date->content='<a href = "post/posteventslist?dt=' . $date->year . $mo . $dy . '">' . $date->day . '</a>';
+                }
+            }
+        }
+
+        break;
+
+    }
+
+}
+
+function excel_dump_events($source) {
+  $headers = array('Content-type' => 'text/octect-stream', 'Content-Disposition' => 'attachment;filename=data.csv');
+
+  header('Content-Type: text/x-csv');
+  header('Expires: '. gmdate('D, d M Y H:i:s') .' GMT');
+
+  header('Content-Disposition: inline; filename="'.$_SERVER['SERVER_NAME'].'.csv"');
+  header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+  header('Pragma: public');
+
+  echo sanitize_events($source);
+}
+function getExpressPostClause_events(){
+  global $user;
+  $roles = $user->roles;
+
+  if ((in_array('Contests_Post_Admin',$roles) && in_array('Contests_Express_Admin',$roles)) or (in_array('Contests_Site_Administrator',$roles))){
+      $clause ="('Post','Express')";
+  } else if (in_array('Contests_Express_Admin',$roles)){
+      $clause="('Express')";
+  } else if (in_array('Contests_Post_Admin',$roles)){
+      $clause="('Post')";
+  } else {
+      $clause="";
+  }
+
+  return $clause;
+}
+
+function events_email(){
+
+    $nid = $_GET['nid'];
+    $cid = $_GET['cid'];
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3><br/>';
+
+    $sql="select data from webform_submitted_data where cid=%d and nid=%d and sid in
+            (select wsd.sid from webform_submitted_data wsd, webform_component wc
+             where wsd.nid=%d and wsd.nid = wc.nid and wc.form_key='opt_out' and wc.cid=wsd.cid)";
+
+    $result = db_query($sql,$cid,$nid,$nid);
+
+    $message="";
+    while ($data = db_fetch_object($result)){
+        $message .= $data->data.", ";
+    }
+
+    $form['emaillist'] = array(
+        '#prefix' => '<p style="width:750px;">',
+        '#value' => $message,
+        '#suffix' => '</p>'
+    );
+
+    return $form;
+}
+
+function events_display(){
+
+    $inclause = getExpressPostClause_events();
+    if (empty($inclause)){
+        $form['#prefix']='<br/><h3>You are not authorized to view events.</h3>';
+        return $form;
+    }
+
+
+    $sql= "SELECT count(*) from {node} n, {term_data} td, {term_node} tn, {content_field_webform} cfw
+           where n.type='webform' and td.name in $inclause
+           and td.tid=tn.tid and tn.nid=cfw.nid and n.nid=cfw.field_webform_nid
+           and cfw.nid in (select nid from {node} where type in ('events','expressevents'))";
+    $num_rows = db_result(db_query($sql));
+    if ($num_rows<1){
+        $form['#prefix']='<br/><h3>There are currently no events.</h3>';
+        return $form;
+    }
+
+    $options = array();
+    $sql= "SELECT n.nid,n.title from {node} n, {term_data} td, {term_node} tn, {content_field_webform} cfw
+            where n.type='webform'and td.name in $inclause
+            and td.tid=tn.tid and tn.nid=cfw.nid and n.nid=cfw.field_webform_nid
+            and cfw.nid in (select nid from {node} where type in ('events','expressevents'))";
+    $result = db_query($sql);
+
+    while ($data = db_fetch_object($result)){
+        $options[$data->nid]= $data->title;
+    }
+
+    $form['event_id'] = array(
+        '#title' => t('Event Id'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#description' => t('Please select an event'),
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+
+    return $form;
+}
+
+function events_display_submit($form, &$form_state){
+    $nid = $form_state['values']['event_id'];
+    $form_state['redirect'] = array("events/detail","nid=".$nid);
+}
+
+function events_detail(){
+
+    $nid = $_GET['nid'];
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+    $sql= "SELECT count(sid) from {webform_submissions} where nid=%d";
+    $num = db_result(db_query($sql,$nid));
+    $sql = "select cid from {webform_component} where type='email' and nid=%d";
+    $emailcid = db_result(db_query_range($sql,$nid,0,1));
+    $sql = "select nid from content_field_webform where field_webform_nid=%d";
+    $eventsnid = db_result(db_query_range($sql,$nid,0,1));
+    $sql = "select sum(data) from {webform_submitted_data} wsd, {webform_component} wc, {events_payment_confirmation} epc
+            where wc.form_key='quantity' and wc.cid=wsd.cid and wc.nid=%d and wc.nid=wsd.nid and wsd.sid=epc.sid
+            and wsd.nid=epc.nid and epc.confirmation is not null";
+    $ticket_count = db_result(db_query($sql,$nid));
+
+    $sql = "select field_paycost_value, field_paydescription_value from content_type_webform where nid=%d";
+    $result = db_query($sql,$nid);
+    $data = db_fetch_object($result);
+    $description = $data->field_paydescription_value;
+    $cost = $data->field_paycost_value;
+
+
+    $sql = "select date_format(str_to_date(field_event_date_value,'%%Y-%%m-%%dT%%T'),'%%M %%d, %%Y %%T') date1,
+            date_format(str_to_date(field_event_date_value2,'%%Y-%%m-%%dT%%T'),'%%M %%d, %%Y %%T') date2 from content_type_events where nid=%d";
+
+
+    $result = db_query_range($sql, $eventsnid, 0, 1);
+    $data = db_fetch_object($result);
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3>';
+
+    $form['event_id'] = array (
+      '#type' => 'value',
+      '#value' => $nid,
+    );
+
+    $form['start_date'] = array (
+      '#title' => t('From Date'),
+      '#type' => 'item',
+      '#description' => $data->date1,
+    );
+
+    $form['end_date]'] = array(
+      '#title' => t('To Date'),
+      '#type' => 'item',
+      '#description' => $data->date2,
+    );
+
+    $form['num_of_entries'] = array(
+      '#title' => t('Number of Entries'),
+      '#type' => 'item',
+      '#description' => empty($num)?"No Entries":$num,
+    );
+
+    $form['num_of_tickets_sold'] = array(
+      '#title' => t('Number of Tickets Sold'),
+      '#type' => 'item',
+      '#description' => empty($ticket_count)?"None Sold":$ticket_count,
+    );
+
+    $form['paid_description'] = array(
+      '#title' => t('Description for Paid Events'),
+      '#type' => 'item',
+      '#description' => $description,
+    );
+
+    $form['cost'] = array(
+      '#title' => t('Cost per Ticket for Paid Events'),
+      '#type' => 'item',
+      '#description' => "$".$cost,
+    );
+
+    if (!empty($emailcid)){
+        $form['email'] = array(
+            '#prefix' => '<a href="?q=events/email&nid=' . $nid . '&cid=' .$emailcid. '">',
+            '#value' => t('Email'),
+            '#suffix' => '</a> | '
+        );
+    }
+
+    $form['download'] = array(
+        '#prefix' => '<a href="?q=events/download&nid=' . $nid . '">',
+        '#value' => t('Download'),
+        '#suffix' => '</a>'
+    );
+
+    return $form;
+}
+
+function events_download(){
+    $nid = $_GET['nid'];
+
+   $sql= "SELECT count(cid) from {webform_component} where nid=%d and form_key='opt_out'";
+   $optrows = db_result(db_query($sql,$nid));
+   if ($optrows >0){
+       $sql= "SELECT name from {webform_component} where nid=%d and form_key='opt_out'";
+       $optrowname = db_result(db_query($sql,$nid));
+   }
+
+   $sql= "SELECT wc.cid, wc.name, wsd.data, wsd.sid FROM {webform_submitted_data} wsd, {webform_component} wc
+            WHERE wsd.nid =%d AND wc.nid =%d AND wc.cid = wsd.cid  and wc.form_key != 'opt_out'
+            and wc.type != 'file' ORDER BY wsd.sid,wc.cid ASC ";
+  $result = db_query($sql, $nid, $nid);
+
+  $oldsid = 0;
+  while ($data = db_fetch_object($result)) {
+      if ($oldsid != $data->sid){
+          if ($oldsid === 0){
+              $firstrec=true;
+          }else {
+              $firstrec=false;
+          }
+
+          if (!$firstrec){
+              $datesql = "SELECT date_format(from_unixtime(submitted),'%%M %%d, %%Y %%T') submitteddate FROM webform_submissions
+                               where nid=%d and sid=%d";
+              $submitteddate = db_result(db_query($datesql,$nid,$oldsid));
+              $source .='"'.$oldsid.'","'.$submitteddate.'",';
+          }
+          $optdata="";
+          if ($optrows >0 && $firstrec===false) {
+              $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                            where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+              $optdata = "";
+              $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+
+              if (empty($optdata) || $optdata===""){
+                $source .='"",';
+              }else {
+                $source .='"'.$optdata.'",';
+              }
+          }
+
+
+          $confnum = "";
+          $confsql = "select confirmation,ordernum from events_payment_confirmation where nid=%d and sid=%d";
+          $confresult = db_query($confsql,$nid,$oldsid);
+          $confdata = db_fetch_object($confresult);
+          $confnum = $confdata->confirmation;
+          $conforder = $confdata->ordernum;
+
+          if (empty($confnum) || $confnum==="") {
+              $source .='"","",'."\n";
+          }else {
+              $source .='"'.$confnum.'","'.$conforder.'",'."\n";
+          }
+
+          $oldsid = $data->sid;
+
+      }
+
+      if ($firstrec){
+          $head .= '"'.$data->name.'",';
+      }
+      $source .= '"'.str_replace( '"',"'",$data->data).'",';
+  }
+
+  $head .= '"Submission ID","Date Submitted",';
+
+   $datesql = "SELECT date_format(from_unixtime(submitted),'%%M %%d, %%Y %%T') submitteddate FROM webform_submissions
+               where nid=%d and sid=%d";
+   $submitteddate = db_result(db_query($datesql,$nid,$oldsid));
+   $source .='"'.$oldsid.'","'.$submitteddate.'",';
+
+  if ($optrows >0){
+      $head .= '"'.$optrowname.'","Confirmation Number","Order Number",';
+      $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                  where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+      $optdata = "";
+      $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+      if (!empty($optdata)){
+          $source .='"'.$optdata.'",';
+      }else {
+          $source .='"",';
+      }
+  } else {
+      $head .= '"Confirmation Number","Order Number",';
+  }
+
+  $confnum = "";
+  $confsql = "select confirmation,ordernum from events_payment_confirmation where nid=%d and sid=%d";
+  $confresult = db_query($confsql,$nid,$oldsid);
+  $confdata = db_fetch_object($confresult);
+  $confnum = $confdata->confirmation;
+  $conforder = $confdata->ordernum;
+
+  if (empty($confnum) || $confnum===""){
+      $source .='"","",'."\n";
+  }else {
+      $source .='"'.$confnum.'","'.$conforder.'",'."\n";
+  }
+
+  $source = $head."\n".$source."\n";
+
+  excel_dump_events($source);
+}
+
+function sanitize_events($string){
+    //decode url
+    $string = urldecode  ($string);
+
+    // strips <name> and </name>
+    $string = strip_tags($string);
+
+    // replaces eval
+    $string = eregi_replace("eval\\((.*)\\)", "",$string);
+
+    // replaces word javascript:
+    $string = eregi_replace("javascript:", "",$string);
+
+    // replaces word script
+    $string = eregi_replace("script", "",$string);
+
+    //custom replace for braces and ;
+    $string= eregi_replace("\\{|\\}|\\[|\\]|;|�|�|�|�", "",$string);
+    return $string;
+}
+
+
+
+
+
+
+         
+
+
+   

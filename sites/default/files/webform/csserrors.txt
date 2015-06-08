@@ -1,0 +1,55 @@
+
+Home page
+
+CMS
+
+
+Customer type
+
+CMS
+
+
+CC Page
+
+CMS error
+
+
+Package
+
+CMS error
+
+
+Layout
+CMS
+
+Meta Page:
+Database - drop downs empty,
+CMS
+JavaScript - other field not displaying
+
+
+Print Compose:
+SAP errors
+Calendar dates not available
+
+Preview not displaying
+Icons not displayed - we cannot detect, but database icon count is something we can use
+Webservices are down
+
+
+Payment:
+CMS
+Preview image not displayed
+SAP error
+BP errors
+Payment errors - credit card invalid, address issues
+Address scrubs -
+Webservices are down
+
+Manage Your Ad:
+SAP errors
+Database errors
+Preview image not displayed
+Webservices are down
+
+

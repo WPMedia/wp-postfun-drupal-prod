@@ -1,0 +1,9 @@
+/* $Id: sites/all/modules/cck/modules/content_multigroup/content_multigroup.css 1.3 2010/02/18 14:50:32EST Linda M. Williams (WILLIAMSLM) Production  $ */
+
+label.content-multigroup {
+  font-weight:bold;
+}  
+
+/* Not styled by default, but available to style */
+hr.content-multigroup {
+}  

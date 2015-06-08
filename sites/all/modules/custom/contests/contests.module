@@ -1,0 +1,1276 @@
+<?php
+// $Id: sites/all/modules/custom/contests/contests.module 1.29 2010/02/18 14:51:57EST Linda M. Williams (WILLIAMSLM) Production  $
+
+/**
+ * @file
+ * Lets users add private annotations to nodes.
+ *
+ * Adds a text field when a node is displayed so that authenticated users may make notes.
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
+function contests_menu() {
+    
+    $items['contests'] = array(
+      'title' => 'Contests Admin',
+      'description' => 'Contests administration.',
+      'position' => 'right',
+      'weight' => -5,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer contests'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    );
+
+    
+
+    $items['contests/display'] = array(
+      'title' => 'Contests Display',
+      'description' => 'Select a contest to display.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('contests_display'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+    $items['contests/downloadfiles'] = array(
+        'title' => t('Download Files'),
+        'page callback' => 'download_files',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+
+//    $items['contests/delete'] = array(
+//      'title' => 'Clean Winners Table',
+//      'description' => 'Remove all rows in contests_winners table',
+//      'page callback' => 'drupal_get_form',
+//      'page arguments' => array('delete_contest_winners'),
+//      'access arguments' => array('administer contests'),
+//      'type' => MENU_NORMAL_ITEM,
+//    );
+
+    $items['contests/set_winners'] = array(
+      'title' => 'Set Winners',
+      'description' => 'Set entrants as select winners',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('set_winners'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['contests/detail'] = array(
+        'title' => t('Contest Detail'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('contests_detail'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/download'] = array(
+        'title' => t('Download All Entries'),
+        'page callback' => 'download_all',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/downloadwinners'] = array(
+        'title' => t('Download Winners'),
+        'page callback' => 'download_winners',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+    
+    $items['contests/winnersemails'] = array(
+        'title' => t('Winners Emails'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('contests_winners_email'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/pickwinners'] = array(
+        'title' => t('Pick Winners'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('contests_select_winners'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/winners_display'] = array(
+        'title' => t('Winners'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('contests_winners_display'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/display_winners_set'] = array(
+        'title' => t('Contest Winners Set'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('set_contests_winners_display'),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('administer contests'),
+    );
+
+    $items['contests/photos'] = array(
+      'title' => 'View Files',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('view_contest_photos'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['contests/tally_select'] = array(
+      'title' => 'Select Tally Field',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('contests_tally_select_field'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['contests/tally_winners'] = array(
+      'title' => 'Tally Display',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('contests_tally_winners'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['contests/email'] = array(
+      'title' => 'Emails',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('contests_email'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['contests/mailinglist_js'] = array(
+      'page callback' => 'contests_mailinglist_js',
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('access content'),
+    );
+
+    $items['contests/mailinglist'] = array(
+      'title' => 'Mailing List',
+      'description' => 'Get a comma separated list of emails.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('contests_mailinglist_display'),
+      'access arguments' => array('administer contests'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+    
+
+    return $items;
+}
+
+function contests_perm(){
+    return array('administer contests', 'administer contests');
+}
+
+function contests_detail(){
+
+    $nid = $_GET['nid'];
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+    $sql= "SELECT count(sid) from {webform_submissions} where nid=%d";
+    $num = db_result(db_query($sql,$nid));
+    $sql= "SELECT count(nid) from {contests_winners} where nid=%d";
+    $winners = db_result(db_query($sql,$nid));
+    $sql = "select cid from {webform_component} where type='file' and nid=%d";
+    $cid = db_result(db_query_range($sql,$nid,0,1));
+    $sql = "select cid from {webform_component} where type='email' and nid=%d";
+    $emailcid = db_result(db_query_range($sql,$nid,0,1));
+    $sql = "select date_format(from_unixtime(s.publish_on),'%%M %%d, %%Y') pub,
+            date_format(from_unixtime(s.unpublish_on),'%%M %%d, %%Y') unpub
+            from {scheduler} s, {content_field_webform} cfm
+            where cfm.field_webform_nid=%d and s.nid=cfm.nid";
+
+    $result = db_query_range($sql, $nid, 0, 1);
+    $data = db_fetch_object($result);
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3>';
+
+    $form['contest_id'] = array (
+      '#type' => 'value',
+      '#value' => $nid,
+    );
+
+    $form['start_date'] = array (
+      '#title' => t('Publish Date'),
+      '#type' => 'item',
+      '#description' => $data->pub,
+    );
+    
+    $form['end_date]'] = array(
+      '#title' => t('Unpublish Date'),
+      '#type' => 'item',
+      '#description' => $data->unpub,
+    );
+
+    $form['num_of_entries'] = array(
+      '#title' => t('Number of Entries'),
+      '#type' => 'item',
+      '#description' => empty($num)?"No Entries":$num,
+    );
+
+    if (!empty($emailcid)){
+        $form['email'] = array(
+            '#prefix' => '<a href="?q=contests/email&nid=' . $nid . '&cid=' .$emailcid. '">',
+            '#value' => t('Email'),
+            '#suffix' => '</a> | '
+        );
+    }
+
+    $form['download'] = array(
+        '#prefix' => '<a href="?q=contests/download&nid=' . $nid . '">',
+        '#value' => t('Download'),
+        '#suffix' => '</a>'
+    );
+
+    if (!empty($cid)){
+        $form['viewphotos'] = array(
+            '#prefix' => ' | <a href="?q=contests/photos&nid=' . $nid . '">',
+            '#value' => t('View Files'),
+            '#suffix' => '</a>'
+        );
+
+        $form['downloadfiles'] = array(
+            '#prefix' => ' | <a href="?q=contests/downloadfiles&nid=' . $nid .'">',
+            '#value' => t('Download Files'),
+            '#suffix' => '</a>'
+        );
+    }
+
+    if (!empty($num)){
+        if (empty($winners)){
+            $form['pickwinners'] = array(
+            '#prefix' => ' | <a href="?q=contests/pickwinners&nid=' . $nid . '">',
+            '#value' => t('Pick Winners'),
+            '#suffix' => '</a> '
+            );
+
+            $form['setwinners'] = array(
+            '#prefix' => ' | <a href="?q=contests/set_winners&nid=' . $nid . '">',
+            '#value' => t('Set Winners'),
+            '#suffix' => '</a> '
+            );
+
+            $form['tallywinners'] = array(
+            '#prefix' => ' | <a href="?q=contests/tally_select&nid=' . $nid . '">',
+            '#value' => t('Tally Votes'),
+            '#suffix' => '</a> '
+            );
+        } else {
+            $form['downloadwinners'] = array(
+            '#prefix' => ' | <a href="?q=contests/downloadwinners&nid=' . $nid . '">',
+            '#value' => t('Download Winners'),
+            '#suffix' => '</a> '
+            );
+
+            $form['winnersemail'] = array(
+            '#prefix' => ' | <a href="?q=contests/winnersemails&nid=' . $nid . '&cid=' .$emailcid.'">',
+            '#value' => t('Winners Emails'),
+            '#suffix' => '</a> '
+            );
+        }
+    }
+    
+    return $form;
+}
+
+function contests_detail_submit($form, &$form_state){
+    $nid = $form_state['values']['contest_id'];
+    excel_dump($nid);
+}
+
+function contests_display(){
+
+    $inclause = getExpressPostClause();
+    if (empty($inclause)){
+        $form['#prefix']='<br/><h3>You are not authorized to view contests.</h3>';
+        return $form;
+    }
+
+
+    $sql= "SELECT count(*) from {node} n, {term_data} td, {term_node} tn, {content_field_webform} cfw
+           where n.type='webform' and td.name in $inclause 
+           and td.tid=tn.tid and tn.nid=cfw.nid and n.nid=cfw.field_webform_nid
+           and cfw.nid in (select nid from {node} where type in ('postcontest','expresscontest'))";
+    $num_rows = db_result(db_query($sql));
+    if ($num_rows<1){
+        $form['#prefix']='<br/><h3>There are currently no contests.</h3>';
+        return $form;
+    }
+
+    $options = array();
+    $sql= "SELECT n.nid,n.title from {node} n, {term_data} td, {term_node} tn, {content_field_webform} cfw
+            where n.type='webform'and td.name in $inclause
+            and td.tid=tn.tid and tn.nid=cfw.nid and n.nid=cfw.field_webform_nid 
+            and cfw.nid in (select nid from {node} where type in ('postcontest','expresscontest'))";
+    $result = db_query($sql);
+
+    while ($data = db_fetch_object($result)){
+        $options[$data->nid]= $data->title;
+    }
+
+    $form['contest_id'] = array(
+        '#title' => t('Contest Id'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#description' => t('Please select a contest id'),
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+
+    return $form;
+}
+
+function contests_display_submit($form, &$form_state){
+    $nid = $form_state['values']['contest_id'];
+    $form_state['redirect'] = array("contests/detail","nid=".$nid);
+}
+
+function contests_winners_display(){
+    global $user;
+    $nid = $_GET['nid'];
+    $num = $_GET['num'];
+    $alt = $_GET['alt'];
+    $cid_position = 4;
+    $num_all = $num+$alt;
+
+    $param_names = array_keys($_GET);
+    if (sizeof($param_names)>$cid_position){
+        for ($i=$cid_position; $i<sizeof($param_names); $i++){
+            //$parameters .= $param_names[$i]."=".$_GET[$param_names[$i]]." ";
+            $cid = $param_names[$i];
+            $sql_questions = "select sid from webform_submitted_data where nid=%d and cid=%d and data='%s'";
+            $result_q = db_query($sql_questions,$nid,$cid,$_GET[$cid]);
+
+            if($i===$cid_position){
+                $j=0;
+                while ($sid_data = db_fetch_object($result_q)){
+                    $sidarray[$j] = $sid_data->sid;
+                    $j++;
+                }
+            } else {
+                $k=0;
+                while ($sid_data = db_fetch_object($result_q)){
+                    if (in_array($sid_data->sid,$sidarray)){
+                        $sidtemp[$k] = $sid_data->sid;
+                        $k++;
+                    }
+                }
+                $sidarray = $sidtemp;
+            }
+            
+        }//end for
+        $keys = array_rand($sidarray,$num_all);
+
+        for($i=0; $i<$num_all; $i++){
+            if (is_array($keys)){
+                $sid = $sidarray[$keys[$i]];
+            } else {
+                 $sid = $sidarray[$keys];
+            }
+
+            //insert winner into contests_winners table
+            $table = 'contests_winners';
+            $record = new stdClass();
+            $record->nid = $nid;
+            $record->sid = $sid;
+            $record->uid = $user->uid;
+            $record->created = time();
+            if ($i<$num){
+                $record->alternate = 'N';
+            } else {
+                $record->alternate = 'Y';
+            }
+
+            drupal_write_record($table,$record);
+
+            //select information to output to admin console
+            $sql= "SELECT wc.cid, wc.name, wsd.data FROM {webform_submitted_data} wsd, {webform_component} wc
+                WHERE wsd.nid =%d AND wc.nid =%d AND wsd.sid =%d AND wc.cid = wsd.cid ORDER BY wc.cid ASC ";
+
+            $result = db_query($sql, $nid, $nid, $sid);
+
+            while ($data = db_fetch_object($result)) {
+                $message .= $data->data."  ";
+            }
+            $message .= "<br/>";
+        }
+    } else {
+        $sql2= "SELECT sid from webform_submissions where nid=%d order by rand()";
+
+        $i=0;
+        $result2 = db_query_range($sql2, $nid, 0, $num_all);
+        while ($data2 = db_fetch_object($result2)){
+            $sid = $data2->sid;
+
+            //insert winner into contests_winners table
+            $table = 'contests_winners';
+            $record = new stdClass();
+            $record->nid = $nid;
+            $record->sid = $sid;
+            $record->uid = $user->uid;
+            $record->created = time();
+            if ($i<$num){
+                $record->alternate = 'N';
+            } else {
+                $record->alternate = 'Y';
+            }
+            
+            drupal_write_record($table,$record);
+
+            //select information to output to admin console
+            $sql= "SELECT wc.cid, wc.name, wsd.data FROM {webform_submitted_data} wsd, {webform_component} wc
+                WHERE wsd.nid =%d AND wc.nid =%d AND wsd.sid =%d AND wc.cid = wsd.cid ORDER BY wc.cid ASC ";
+
+            $result = db_query($sql, $nid, $nid, $sid);
+
+            while ($data = db_fetch_object($result)) {
+                $message .= $data->data."  ";
+            }
+            if ($record->alternate == 'Y'){
+                $message .= "<b> -Alternate</b>";
+            }
+
+            $message .= "<br/>";
+
+            $i++;
+        }
+    }
+
+    
+  
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3>';
+    
+    $form['winners'] = array(
+        '#prefix' => '<em>',
+        '#value' => $message,
+        '#suffix' => '</em>'
+    );
+
+    //drupal_set_message("The winner is: $nid $num");
+    
+    return $form;
+}
+
+function contests_select_winners(){
+
+    $nid = $_GET['nid'];
+    $options = array();
+    $options['0']='';
+    $sql= "SELECT cid,form_key from {webform_component} where nid=%d";
+    $result = db_query($sql,$nid);
+    while ($data = db_fetch_object($result)){
+        $options[$data->cid]= $data->form_key;
+    }
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3>';
+
+    $form['contest_id'] = array(
+        '#type' => 'value',
+        '#value' => $nid,
+    );
+
+    $form['num_of_winners'] = array(
+        '#title' => t('Number of Winners'),
+        '#type' => 'textfield',
+        '#maxlength' => 3,
+        '#size' => 10,
+        '#description' => t('Enter number of winners to pick'),
+    );
+
+    $form['num_of_alternates'] = array(
+        '#title' => t('Number of Alternates'),
+        '#type' => 'textfield',
+        '#maxlength' => 3,
+        '#size' => 10,
+        '#description' => t('Enter number of alternate winners to pick'),
+    );
+
+    $form['field1'] = array(
+        '#title' => t('Question1'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value1'] = array(
+        '#title' => t('Answer1'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field2'] = array(
+        '#title' => t('Question2'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value2'] = array(
+        '#title' => t('Answer2'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field3'] = array(
+        '#title' => t('Question3'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value3'] = array(
+        '#title' => t('Answer3'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field4'] = array(
+        '#title' => t('Question4'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value4'] = array(
+        '#title' => t('Answer4'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field5'] = array(
+        '#title' => t('Question5'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value5'] = array(
+        '#title' => t('Answer5'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field6'] = array(
+        '#title' => t('Question6'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value6'] = array(
+        '#title' => t('Answer6'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['field7'] = array(
+        '#title' => t('Question7'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+    );
+
+    $form['value7'] = array(
+        '#title' => t('Answer7'),
+        '#type' => 'textfield',
+        '#size' => 50,
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+
+    return $form;
+}
+
+function contests_select_winners_submit($form, &$form_state){
+    $nid = $form_state['values']['contest_id'];
+    $num = $form_state['values']['num_of_winners'];
+    $alt = $form_state['values']['num_of_alternates'];
+
+    $paramUrl = "nid=".$nid."&num=".$num."&alt=".$alt;
+
+    for ($i=1; $i<=7; $i++){
+        $fieldname = "field".$i;
+        if(!empty($form_state['values'][$fieldname])){
+            $paramUrl .= "&".$form_state['values'][$fieldname]."=".$form_state['values']["value".$i];
+        }
+    };
+
+    //drupal_set_message("The winner is: $message");
+    $form_state['redirect'] = array("contests/winners_display",$paramUrl);
+}
+
+function download_all (){
+   $nid = $_GET['nid'];
+
+   $sql= "SELECT count(cid) from {webform_component} where nid=%d and form_key='opt_out'";
+   $optrows = db_result(db_query($sql,$nid));
+   if ($optrows >0){
+       $sql= "SELECT name from {webform_component} where nid=%d and form_key='opt_out'";
+       $optrowname = db_result(db_query($sql,$nid));
+   }
+
+   $sql= "SELECT wc.cid, wc.name, wsd.data, wsd.sid FROM {webform_submitted_data} wsd, {webform_component} wc
+            WHERE wsd.nid =%d AND wc.nid =%d AND wc.cid = wsd.cid  and wc.form_key != 'opt_out'
+            and wc.type != 'file' ORDER BY wsd.sid,wc.cid ASC ";
+  $result = db_query($sql, $nid, $nid);
+
+  $oldsid = 0;
+  while ($data = db_fetch_object($result)) {
+      if ($oldsid != $data->sid){
+          if ($oldsid === 0){
+              $firstrec=true;
+          }else {
+              $firstrec=false;
+          }
+
+          if (!$firstrec){
+              $datesql = "SELECT date_format(from_unixtime(submitted),'%%M %%d, %%Y %%T') submitteddate FROM webform_submissions
+                               where nid=%d and sid=%d";
+              $submitteddate = db_result(db_query($datesql,$nid,$oldsid));
+              $source .='"'.$oldsid.'","'.$submitteddate.'",';
+          }
+
+          $optdata="";
+          if ($optrows >0 && $firstrec===false) {
+              $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                            where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+              $optdata = "";
+              $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+          }
+          if (empty($optdata) || $optdata===""){
+             $source .="\n";
+          }else {
+             $source .='"'.$optdata.'"'."\n";
+          }
+
+          $oldsid = $data->sid;
+      }
+
+      if ($firstrec){
+          $head .= '"'.$data->name.'",';
+      }
+      $source .= '"'.str_replace( '"',"'",$data->data).'",';
+  }
+
+  $datesql = "SELECT date_format(from_unixtime(submitted),'%%M %%d, %%Y %%T') submitteddate FROM webform_submissions
+              where nid=%d and sid=%d";
+  $submitteddate = db_result(db_query($datesql,$nid,$oldsid));
+  $source .='"'.$oldsid.'","'.$submitteddate.'",';
+
+
+  if ($optrows >0){
+      $head .= '"Submission Id","Submit Date","'.$optrowname.'"';
+      $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                  where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+      $optdata = "";
+      $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+      if (!empty($optdata)){
+          $source .='"'.$optdata.'"';
+      }
+  } else {
+      $head .= '"Submission Id","Submit Date"';
+  }
+  $source = $head."\n".$source."\n";
+
+  excel_dump($source);
+}
+
+function download_winners(){
+    $nid = $_GET['nid'];
+
+    $sql= "SELECT count(cid) from {webform_component} where nid=%d and form_key='opt_out'";
+    $optrows = db_result(db_query($sql,$nid));
+    if ($optrows >0){
+       $sql= "SELECT name from {webform_component} where nid=%d and form_key='opt_out'";
+       $optrowname = db_result(db_query($sql,$nid));
+    }
+
+    $sql = "SELECT wc.cid, wc.name, wsd.data, wsd.sid, cw.alternate FROM {webform_submitted_data} wsd, {webform_component} wc, {contests_winners} cw
+            WHERE wsd.nid =%d AND wc.nid =%d and cw.nid = %d
+            and cw.sid = wsd.sid AND wc.cid = wsd.cid and wc.form_key != 'opt_out' ORDER BY cw.sid,wc.cid ASC";
+
+    $result = db_query($sql, $nid, $nid, $nid);
+
+    $oldsid = 0;
+    while ($data = db_fetch_object($result)) {
+          if ($oldsid != $data->sid){
+                if ($oldsid === 0){
+                  $firstrec=true;
+                }else {
+                  $firstrec=false;
+                }
+
+
+
+                if ($optrows >0 && $firstrec===false) {
+                    $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                            where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+                    $optdata = "";
+                    $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+
+                    if (empty($optdata) || $optdata===""){
+                        $source .='"",';
+                    }else {
+                        $source .='"'.$optdata.',"';
+                    }
+                }
+                
+                if (!$firstrec){
+                  $source .=$alternate.",\n";
+                }else{
+                  $source .="\n";
+                }
+                
+
+                $alternate = $data->alternate;
+                $oldsid = $data->sid;
+          }
+
+          if ($firstrec){
+            $head .= '"'.$data->name.'",';
+          }
+          $source .= '"'.str_replace( '"',"'",$data->data).'",';
+    }
+
+    if ($optrows >0){
+        
+        $optsql = "select wsd.data from {webform_submitted_data} wsd, {webform_component} wc
+                  where wsd.nid=%d and wc.nid=%d and wc.cid=wsd.cid and wsd.sid = %d and wc.form_key='opt_out'";
+        $optdata = "";
+        $optdata = db_result(db_query($optsql,$nid,$nid,$oldsid));
+        if (!empty($optdata) || $optdata===""){
+            $source .='"'.$optdata.'",'.$alternate.",\n";
+        }else {
+            $source .='"",'.$alternate.",\n";
+        }
+    }
+
+    if ($optrows>0){
+        $head .= '"'.$optrowname.'",'."alternate,\n";
+    } else {
+        $head .= "alternate,\n";
+    }
+    $source = $head.$source;
+
+    excel_dump($source);
+}
+
+function excel_dump($source) {
+  $headers = array('Content-type' => 'text/octect-stream', 'Content-Disposition' => 'attachment;filename=data.csv');
+
+  header('Content-Type: text/x-csv');
+  header('Expires: '. gmdate('D, d M Y H:i:s') .' GMT');
+
+  header('Content-Disposition: inline; filename="'.$_SERVER['SERVER_NAME'].'.csv"');
+  header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+  header('Pragma: public');
+
+  $source = sanitize($source);
+  echo $source;
+}
+
+function getExpressPostClause(){
+  global $user;
+  $roles = $user->roles;
+
+  if ((in_array('Contests_Post_Admin',$roles) && in_array('Contests_Express_Admin',$roles)) or (in_array('Contests_Site_Administrator',$roles))){
+      $clause ="('Post','Express')";
+  } else if (in_array('Contests_Express_Admin',$roles)){
+      $clause="('Express')";
+  } else if (in_array('Contests_Post_Admin',$roles)){
+      $clause="('Post')";
+  } else {
+      $clause="";
+  }
+
+  return $clause;
+}
+
+function delete_contest_winners(){
+    db_query("delete from {contests_winners}");
+    $form['#prefix']='<br/><h3>Contests Winners table cleared</h3>';
+    //drupal_set_message("Contests Winners cleared");
+    //echo("Contests Winners cleared");
+    return $form;
+}
+
+function set_winners(){
+    $nid = $_GET['nid'];
+    $options = array();
+    $sql = "SELECT wc.cid, wc.name, wsd.data, wsd.sid FROM {webform_submitted_data} wsd, {webform_component} wc
+            WHERE wsd.nid =%d AND wc.nid =%d
+            and wc.cid = wsd.cid and wc.type !='file' ORDER BY wsd.sid,wc.cid ASC";
+
+    $result = db_query($sql, $nid, $nid);
+
+    $oldsid = 0;
+    $data = null;
+    $source=null;
+    while ($data = db_fetch_object($result)) {
+          if ($oldsid != $data->sid){
+                if ($oldsid === 0){
+                  $firstrec=true;
+                }else {
+                  $firstrec=false;
+                }
+
+                if (!$firstrec){
+                    $options[$oldsid]="<b>Entrant# ".$oldsid."</b>  ".$source;
+                    $source="";
+                }
+                $oldsid = $data->sid;
+          }
+
+          if ($firstrec){
+            $head .= $data->name.'  ';
+          }
+          $source .= $data->data.'  ';
+    }
+    $options[$oldsid]="<b>Entrant# ".$oldsid."</b>  ".$source;
+
+    $form['contest_id'] = array(
+        '#type' => 'value',
+        '#value' => $nid,
+    );
+
+    $form['entries']= array (
+        '#title' => t('Entries'),
+        '#type' => 'checkboxes',
+        '#description' => t('Select all entrants that should be set as winners'),
+        '#options' => $options,
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+
+    return $form;
+}
+
+function set_winners_submit($form, &$form_state){
+    global $user;
+    $nid = $form_state['values']['contest_id'];
+    $winners = $form_state['values']['entries'];
+    $winners_keys = array_values($winners);
+
+    for ($i=0; $i<=sizeof($winners_keys); $i++){
+        if($winners_keys[$i] != 0){
+            //insert winner into contests_winners table
+            $table = 'contests_winners';
+            $record = new stdClass();
+            $record->nid = $nid;
+            $record->sid = $winners_keys[$i];
+            $record->uid = $user->uid;
+            $record->created = time();
+            $record->alternate = 'N';
+
+            drupal_write_record($table,$record);
+        }    
+    };
+    $form_state['redirect'] = array("contests/display_winners_set");
+}
+
+function set_contests_winners_display(){
+    $form['#prefix']='<br/><h3>Contests winners set.  Use download winners to access list of winners.</h3>';
+    return $form;
+}
+
+function view_contest_photos(){
+    $nid = $_GET['nid'];
+
+    $sql = "select cid from {webform_component} where type='file' and nid=%d";
+    $cid = db_result(db_query_range($sql,$nid,0,1));
+
+    $sql = "SELECT wsd.data, wsd.sid FROM {webform_submitted_data} wsd
+            WHERE wsd.nid =%d AND wsd.cid=%d ORDER BY wsd.sid ASC";
+
+    $result = db_query($sql,$nid,$cid);
+
+    $htmlstr="";
+
+    while ($data = db_fetch_object($result)){
+        $datastr = $data->data;
+        $sid = $data->sid;
+        $pos1 = strpos($datastr,"{");
+        $pos2 = strpos($datastr,"}");
+        $datastr2 = substr($datastr,$pos1+1,$pos2-$pos1-1);
+        $pieces = explode(";",$datastr2);
+        //print_r($pieces);
+        
+        $sql2= "SELECT wsd.data  FROM {webform_submitted_data} wsd, {webform_component} wc 
+                where wsd.sid=%d and wsd.nid=%d and wsd.nid=wc.nid and wc.cid=wsd.cid and wc.form_key='%s' ";
+        $lastname = db_result(db_query($sql2,$sid,$nid,"last_name"));
+        $firstname = db_result(db_query($sql2,$sid,$nid,"first_name"));
+
+        $source="";        
+        $source .= $lastname.", ".$firstname;
+
+
+        $foundphoto=false;
+        $numberofpieces = count($pieces);
+        for ($i=0; $i<$numberofpieces; $i++){
+            $morepieces = explode(":",$pieces[$i]);
+            if ($morepieces[2]=='"filepath"'){
+                $value = explode(":",$pieces[$i+1]);
+                $path = substr($value[2],1,$value[1]);
+                $photoUrl=file_create_url($path);
+                //$htmlstr .= "<br/><img src='$photoUrl' STYLE='display:  block'/><br/><em><b>Entrant# </b>$sid  $source</em><br/><hr style='height:3px;'/>";
+                $htmlstr .= "<br/><a href='".$photoUrl."'>".$photoUrl."</a><br/><em><b>Entrant# </b>$sid  $source</em><br/><hr style='height:3px;'/>";
+                $foundphoto=true;
+                break;
+            }
+        }
+        if ($foundphoto === false){
+            $htmlstr .= "<br/>NO PHOTO FOUND</a><br/><em><b>Entrant# </b>$sid  $source</em><br/><hr style='height:3px;'/>";
+        }
+    }
+
+    //$photoUrl=file_create_url("sites/default/files/birthdayKarenandme.jpg");
+   // $photoUrl2=file_create_url("sites/default/files/webform/russia/foodwine.jpg");
+    $form['#prefix']=$htmlstr;
+    return $form;
+}
+
+function contests_tally_select_field(){
+
+    $nid = $_GET['nid'];
+    $options = array();
+    $options['0']='';
+    $sql= "SELECT cid,form_key from {webform_component} where nid=%d";
+    $result = db_query($sql,$nid);
+    while ($data = db_fetch_object($result)){
+        $options[$data->cid]= $data->form_key;
+    }
+
+    $form['contest_id'] = array(
+        '#type' => 'value',
+        '#value' => $nid,
+    );
+
+    $form['cid'] = array(
+        '#title' => t('Tally Field'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#width' => 20,
+        '#description' => t('Select field to tally'),
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+    );
+
+    return $form;
+}
+
+function contests_tally_select_field_submit($form, &$form_state){
+    $nid = $form_state['values']['contest_id'];
+    $cid = $form_state['values']['cid'];
+
+    $paramUrl = "nid=".$nid."&cid=".$cid;
+    
+    //drupal_set_message("The winner is: $message");
+    $form_state['redirect'] = array("contests/tally_winners",$paramUrl);
+}
+
+function contests_tally_winners(){
+    $nid = $_GET['nid'];
+    $cid = $_GET['cid'];
+
+    $sql="select count(data) count, data from {webform_submitted_data} where nid=%d and cid=%d group by data";
+    $result = db_query($sql,$nid,$cid);
+    $message="";
+    while ($data = db_fetch_object($result)){
+        $message .= $data->data."    Votes: ".$data->count."<br/>";
+    }
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3><br/>';
+
+    $form['tally'] = array(
+        '#prefix' => '<em>',
+        '#value' => $message,
+        '#suffix' => '</em>'
+    );
+
+    return $form;
+}
+
+function contests_email(){
+
+    $nid = $_GET['nid'];
+    $cid = $_GET['cid'];
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3><br/>';
+
+    $sql="select data from webform_submitted_data where cid=%d and nid=%d and sid in
+            (select wsd.sid from webform_submitted_data wsd, webform_component wc
+             where wsd.nid=%d and wsd.nid = wc.nid and wc.form_key='opt_out' and wc.cid=wsd.cid)";
+
+    $result = db_query($sql,$cid,$nid,$nid);
+
+    $message="";
+    while ($data = db_fetch_object($result)){
+        $message .= $data->data.", ";
+    }
+
+    $form['emaillist'] = array(
+        '#prefix' => '<p style="width:750px;">',
+        '#value' => $message,
+        '#suffix' => '</p>'
+    );
+    
+    return $form;
+}
+
+
+function contests_winners_email(){
+
+    $nid = $_GET['nid'];
+    $cid = $_GET['cid'];
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $title = db_result(db_query($sql,$nid));
+
+    $form['#prefix']='<br/><h3>'.$title.'</h3><br/>';
+
+    $sql="select data from webform_submitted_data where cid=%d and nid=%d and sid in
+            (select sid from contests_winners where nid=%d)";
+
+    $result = db_query($sql,$cid,$nid,$nid);
+
+    $message="";
+    while ($data = db_fetch_object($result)){
+        $message .= $data->data.", ";
+    }
+
+    $form['winneremaillist'] = array(
+        '#prefix' => '<p style="width:750px;">',
+        '#value' => $message,
+        '#suffix' => '</p>'
+    );
+
+    return $form;
+}
+
+function contests_block($op='list',$delta=0,$edit=array()){
+    switch($op){
+        case 'list':
+            $blocks[0]['info']=t('Email form');
+            $blocks[0]['cache']=BLOCK_NO_CACHE;
+            return $blocks;
+
+        case 'view':
+            $block['content']=drupal_get_form('contests_email_form');
+            return $block;
+
+        case 'configure':
+            $form['email_form_text'] = array (
+                '#type' => 'textfield',
+                '#title' => t('Email Form Text'),
+                '#default_value' => variable_get('contests_email_form_text',"We'll let you know about new contests, update you on current ones, and alert you to fun events."),
+                '#description' => t('Please enter text that will appear at the top of the email form')
+            );
+            return $form;
+
+        case 'save':
+            variable_set('contests_email_form_text', $edit['email_form_text']);
+            break;
+    }
+}
+
+function contests_email_form (){
+    //$form['#prefix']='<br/><h3>Email Mailing List</h3><br/>';
+    //$form['#redirect'] = drupal_get_destination();
+    //$form['#prefix']="<h4>Mailing List</h4><p>Join our mailing list and we'll keep you up to date about interesting promotions.</p>";
+    $form['#prefix']=variable_get('contests_email_form_text',"We'll let you know about new contests, update you on current ones, and alert you to fun events.");
+    $form['#id']="mailform";
+    $form['message'] = array (
+        '#type' => 'markup',
+        '#prefix' => '<div id="maillistmsg">',
+        '#value' => t(' '),
+        '#suffix' => '</div>'
+    );
+    $form['email'] = array(
+        '#prefix' => '<div id="maillistinput">',
+        '#type' => 'textfield',
+        '#id' => 'maillistvalue',
+        '#maxlength' => 255,
+        '#suffix' => '</div>'
+        //'#size' => 15,
+        //'#description' => t('Enter email address'),
+    );
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+        '#id' => 'maillistsubmit',
+        '#ahah' => array (
+            'event' => 'click',
+            'path' => 'contests/mailinglist_js',
+            'wrapper' => 'maillistmsg',
+            'effect' => 'none',
+            'method' => 'replace'
+            //'selector' => 'empty(input#edit-email.form-text])'
+
+        )
+    );
+
+    return $form;
+}
+
+
+function contests_mailinglist_js(){
+    $email = sanitize($_POST['email']);
+
+    if (empty($email)){
+        drupal_json(array('status'=>TRUE,'data'=>t(' ')));
+    } else {
+        $table = 'contests_mailing_list';
+        $record = new stdClass();
+        $record->email = $email;
+        $record->created = time();
+
+        drupal_write_record($table,$record);
+        drupal_json(array('status'=>TRUE,'data'=>t('The email address <span class="bold">' . $email . '</span> has been added to our list.<script type="text/javascript">$("div#maillistmsg").fadeIn("slow");$("#maillistvalue").val("");</script>')));
+    }
+    
+}
+
+
+
+function contests_mailinglist_display(){
+
+    $form['#prefix']='<br/><h3>Mailing List</h3><br/>';
+    $sql="select email from {contests_mailing_list}";
+    $result = db_query($sql);
+
+    $message="";
+    while ($data = db_fetch_object($result)){
+        $message .= $data->email.", ";
+    }
+
+    $form['mailinglistdisplay'] = array(
+        '#prefix' => '<p>',
+        '#value' => $message,
+        '#suffix' => '</p>'
+    );
+
+    return $form;
+}
+
+
+function download_files(){
+
+    $nid = $_GET['nid'];
+
+    $sql= "SELECT title from {node} where nid=%d";
+    $nameoffile = db_result(db_query($sql,$nid)).".zip";
+
+    $zip = new ZipArchive;
+
+    //$nameoffile='test.zip';
+    if($zip->open($nameoffile,ZipArchive::OVERWRITE)) { 
+
+        $sql = "select cid,form_key from {webform_component} where type='file' and nid=%d";
+        $cid_result = db_query($sql,$nid);
+        while ($cid_data = db_fetch_object($cid_result)) {
+            $cid = $cid_data->cid;
+            $filefieldname = $cid_data->form_key;
+
+            $sql = "SELECT wsd.data, wsd.sid FROM {webform_submitted_data} wsd
+            WHERE wsd.nid =%d AND wsd.cid=%d ORDER BY wsd.sid ASC";
+
+            $result = db_query($sql,$nid,$cid);
+            while ($data = db_fetch_object($result)) {
+                $datastr = $data->data;
+                $sid = $data->sid;
+                $pos1 = strpos($datastr,"{");
+                $pos2 = strpos($datastr,"}");
+                $datastr2 = substr($datastr,$pos1+1,$pos2-$pos1-1);
+                $pieces = explode(";",$datastr2);
+                //print_r($pieces);
+
+
+                $numberofpieces = count($pieces);
+                for ($i=0; $i<$numberofpieces; $i++) {
+                    $morepieces = explode(":",$pieces[$i]);
+                    
+                    if ($morepieces[2]=='"filename"') {
+                        $value = explode(":",$pieces[$i+1]);
+                        $newfilename = $sid."_".substr($value[2],1,$value[1]);
+                    }
+
+                    if ($morepieces[2]=='"filepath"') {
+                        $value = explode(":",$pieces[$i+1]);
+                        $path = substr($value[2],1,$value[1]);
+                        
+                    }
+                }
+                $zip->addFile($path,$newfilename);
+            }
+        }
+
+        $zip->close();
+
+        header("Pragma: public");
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header("Cache-Control: public");
+        header("Content-Description: File Transfer");
+        header("Content-Type: application/zip");
+        header("Content-Disposition: attachment; filename=\"{$nameoffile}\"");
+        header("Content-Transfer-Encoding: binary");
+        header("Content-Length: " . filesize($nameoffile));
+
+        @readfile("$nameoffile");
+    }
+
+    unlink($nameoffile);
+
+}
+function sanitize($string){
+    //decode url
+    $string = urldecode  ($string);
+
+    // strips <name> and </name>
+    $string = strip_tags($string);
+
+    // replaces eval
+    $string = eregi_replace("eval\\((.*)\\)", "",$string);
+
+    // replaces word javascript:
+    $string = eregi_replace("javascript:", "",$string);
+
+    // replaces word script
+    $string = eregi_replace("script", "",$string);
+
+    //custom replace for braces and ;
+    $string= eregi_replace("\\{|\\}|\\[|\\]|;|�|�|�|�", "",$string);
+    return $string;
+}
