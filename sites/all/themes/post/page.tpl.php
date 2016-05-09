@@ -98,7 +98,7 @@
             var wp_application = "application - postfun - <?php print $formtype; ?>";
             -->
         </script>
-        <script type="text/javascript" src="http://media.washingtonpost.com/wp-srv/javascript/placeSiteMetrix.js"></script>
+        <script type="text/javascript" src="https://media.washingtonpost.com/wp-srv/javascript/placeSiteMetrix.js"></script>
         <script type="text/javascript">placeSiteMetrix();</script>
 
     </body>

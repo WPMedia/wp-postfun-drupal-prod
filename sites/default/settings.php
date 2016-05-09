@@ -90,7 +90,7 @@
  *   $db_url = 'pgsql://username:password@localhost/databasename';
  *
  */
-$db_url = 'mysql://admin:secrethandshake@localhost/contests';
+$db_url = 'mysql://admin:secrethandshake@wp-entdev-mysql-v-5-5.cayhcykxwtbn.us-east-1.rds.amazonaws.com/contests';
 $db_prefix = '';
 
 /*
@@ -141,7 +141,7 @@ $update_free_access = FALSE;
  * It is not allowed to have a trailing slash; Drupal will add it
  * for you.
  */
-# $base_url = 'http://www.example.com';  // NO trailing slash!
+$base_url = 'https://postfun.washingtonpost.com';  // NO trailing slash!
 
 /**
  * PHP settings:
